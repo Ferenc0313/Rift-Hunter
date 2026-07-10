@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#9db7cf" />
-  <title>Rift Hunter — Bright Assault</title>
+  <title>Rift Hunter — FPS Reforged</title>
   <style>
     :root {
       --safe-t: env(safe-area-inset-top, 0px);
@@ -585,12 +585,12 @@
     <div id="startScreen" class="screen">
       <div class="panel">
         <h1 class="title">Rift Hunter</h1>
-        <p class="subtitle">Egy világosabb, ködös romarénában egyetlen démoni kapuból törnek elő a hullámok. A jobb oldali húzás és a tűzgomb húzása közvetlen mobil FPS-célzást ad; ADS alatt finomabb az érzékenység és enyhe célkövetés segít.</p>
+        <p class="subtitle">FPS-only változat: simább mozgás, stabilabb lövés, slide, világosabb aréna, fejlettebb fegyverfejlődés és zsákmányrendszer. Csak a fegyver látszik a képernyőn; nincs TPP nézet és nincs belógó karaktermodell.</p>
         <div class="controls-guide">
           <div class="guide-item"><strong>Bal joystick</strong>Mozgás, átlós haladás, maximális előretolásnál sprint.</div>
           <div class="guide-item"><strong>Jobb oldal / tűzgomb húzása</strong>Közvetlen célzás, gyorsabb húzásnál enyhe gyorsítással. ADS alatt finomabb.</div>
           <div class="guide-item"><strong>Tűz / ADS / R</strong>Automata sorozat, kapcsolható célzás, külön újratöltés.</div>
-          <div class="guide-item"><strong>Kamera / Dodge</strong>FPS–RPG nézetváltás és cooldownos gyors kitérés.</div>
+          <div class="guide-item"><strong>Kamera / Dodge</strong>Slide vagy oldalirányú dash cooldownnal.</div>
         </div>
         <div class="quality-row" aria-label="Grafikai minőség">
           <button class="quality-btn" data-quality="low">Alacsony</button>
@@ -630,9 +630,10 @@
           <div><span class="small-label">Hullám</span> <strong id="waveText">1</strong></div>
           <div><span class="small-label">Pont</span> <strong id="scoreText">0</strong></div>
           <div><span class="small-label">Ellenfél</span> <strong id="enemyText">0</strong></div>
+          <div><span class="small-label">Gold</span> <strong id="goldText">0</strong></div>
         </div>
       </div>
-      <div id="modeBadge" class="hud-card">FPS</div>
+      <div id="modeBadge" class="hud-card">Vanguard AK · MK I</div>
       <div id="ammoCard" class="hud-card">
         <div class="small-label">Lőszer</div>
         <div id="ammoMain"><strong id="magText">30</strong> <span style="font-size:17px;color:#8da4bd">/ <span id="reserveText">180</span></span></div>
@@ -653,8 +654,7 @@
       <button id="fireBtn" class="touch-btn" aria-label="Lövés">●</button>
       <button id="adsBtn" class="touch-btn" aria-label="Célzás">⌾</button>
       <button id="reloadBtn" class="touch-btn" aria-label="Újratöltés">R</button>
-      <button id="dodgeBtn" class="touch-btn" aria-label="Kitérés"><span id="dodgeFill"></span>↯</button>
-      <button id="viewBtn" class="touch-btn" aria-label="Nézetváltás">◉</button>
+      <button id="dodgeBtn" class="touch-btn" aria-label="Slide vagy kitérés"><span id="dodgeFill"></span>SL</button>
       <button id="pauseBtn" class="touch-btn" aria-label="Szünet">Ⅱ</button>
     </div>
 
@@ -669,7 +669,7 @@
     <div id="upgradeScreen" class="screen hidden">
       <div class="panel">
         <h2 class="modal-title">Szintlépés</h2>
-        <p class="subtitle">Válassz egy fejlesztést. A játék a döntésig szünetel.</p>
+        <p class="subtitle">Válassz egy fejlesztést. A fegyvered kinézete és működése is fejlődhet.</p>
         <div id="upgradeCards"></div>
       </div>
     </div>
@@ -697,12 +697,12 @@
       upgradeScreen: $('upgradeScreen'), upgradeCards: $('upgradeCards'), gameOverScreen: $('gameOverScreen'),
       gameOverStats: $('gameOverStats'), restartBtn: $('restartBtn'),
       healthText: $('healthText'), healthFill: $('healthFill'), xpFill: $('xpFill'), levelText: $('levelText'),
-      waveText: $('waveText'), scoreText: $('scoreText'), enemyText: $('enemyText'), modeBadge: $('modeBadge'),
+      waveText: $('waveText'), scoreText: $('scoreText'), enemyText: $('enemyText'), goldText: $('goldText'), modeBadge: $('modeBadge'),
       magText: $('magText'), reserveText: $('reserveText'), reloadText: $('reloadText'), waveBanner: $('waveBanner'),
       crosshair: $('crosshair'), hitmarker: $('hitmarker'), damageFlash: $('damageFlash'), vignette: $('vignette'),
       fpsMeter: $('fpsMeter'), lookZone: $('lookZone'), joystick: $('joystick'), joystickKnob: $('joystickKnob'),
       fireBtn: $('fireBtn'), adsBtn: $('adsBtn'), reloadBtn: $('reloadBtn'), dodgeBtn: $('dodgeBtn'),
-      dodgeFill: $('dodgeFill'), viewBtn: $('viewBtn'), pauseBtn: $('pauseBtn')
+      dodgeFill: $('dodgeFill'), pauseBtn: $('pauseBtn')
     };
 
     const QUALITY = {
@@ -711,35 +711,53 @@
       high:   { pixelRatio: 1.5, shadows: true, particles: 1.0, maxEnemies: 18, antialias: true, detail: 2 }
     };
 
+    
     const CFG = {
       arenaHalf: 22,
       playerRadius: 0.62,
       eyeHeight: 1.68,
-      baseMoveSpeed: 5.1,
-      sprintMultiplier: 1.55,
-      adsMoveMultiplier: 0.62,
-      lookSensitivity: 0.00285,
-      adsSensitivity: 0.56,
-      verticalSensitivity: 0.82,
-      lookAcceleration: 0.24,
-      lookSmoothing: 46,
-      aimAssistStrength: 4.2,
-      aimAssistCone: 0.075,
-      pitchMin: -1.12,
-      pitchMax: 1.18,
-      fireRate: 0.095,
-      baseDamage: 31,
+      baseMoveSpeed: 5.7,
+      sprintMultiplier: 1.62,
+      adsMoveMultiplier: 0.72,
+      lookSensitivity: 0.00265,
+      adsSensitivity: 0.52,
+      verticalSensitivity: 0.84,
+      lookAcceleration: 0.18,
+      lookSmoothing: 54,
+      aimAssistStrength: 4.8,
+      aimAssistCone: 0.08,
+      pitchMin: -1.08,
+      pitchMax: 1.1,
+      fireRate: 0.09,
+      baseDamage: 30,
       magSize: 30,
       reserveAmmo: 180,
-      reloadTime: 1.82,
-      dodgeDuration: 0.22,
-      dodgeSpeed: 16.5,
-      dodgeCooldown: 2.2,
+      reloadTime: 1.72,
+      dodgeDuration: 0.18,
+      dodgeSpeed: 17.5,
+      dodgeCooldown: 2.0,
+      slideDuration: 0.7,
+      slideSpeed: 12.5,
+      slideCooldown: 2.4,
+      slideCameraDrop: 0.42,
       maxDelta: 0.05,
-      thirdDistance: 4.9,
-      thirdHeight: .92,
       waveBreak: 4.0
     };
+
+    const WEAPON_ARCHETYPES = {
+      rifle:  { key:'rifle',  short:'Vanguard AK', name:'Vanguard AK', damage:30, fireRate:0.088, magSize:32, reserve:196, reload:1.64, hipSpread:0.0082, adsSpread:0.00135, hipRecoil:0.036, adsRecoil:0.019, bulletColor:0xffd58a },
+      smg:    { key:'smg',    short:'Specter SMG', name:'Specter SMG', damage:22, fireRate:0.064, magSize:40, reserve:240, reload:1.42, hipSpread:0.0105, adsSpread:0.0018, hipRecoil:0.022, adsRecoil:0.013, bulletColor:0xffe39a },
+      heavy:  { key:'heavy',  short:'Ravager AR',  name:'Ravager AR',  damage:37, fireRate:0.114, magSize:26, reserve:156, reload:1.86, hipSpread:0.0074, adsSpread:0.00115, hipRecoil:0.048, adsRecoil:0.026, bulletColor:0xffbe68 }
+    };
+
+    const WEAPON_TIERS = [
+      { title:'MK I',      mult:1.00, magBonus:0, reloadMult:1.00, recoilMult:1.00, laser:false, color:0x4b2e21, emissive:0x111111, flash:0xffd58a },
+      { title:'MK II',     mult:1.10, magBonus:2, reloadMult:0.96, recoilMult:0.94, laser:false, color:0x203444, emissive:0x102333, flash:0x9fe6ff },
+      { title:'MK III',    mult:1.22, magBonus:4, reloadMult:0.92, recoilMult:0.88, laser:false, color:0x3b2358, emissive:0x251149, flash:0xc3a0ff },
+      { title:'MK IV',     mult:1.36, magBonus:7, reloadMult:0.87, recoilMult:0.82, laser:false, color:0x6a1e36, emissive:0x4c0f32, flash:0xff74a2 },
+      { title:'GALACTIC',  mult:1.58, magBonus:10, reloadMult:0.82, recoilMult:0.72, laser:true,  color:0x1b3152, emissive:0x1f5ba7, flash:0x5de9ff }
+    ];
+    
 
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const lerp = (a, b, t) => a + (b - a) * t;
@@ -1017,10 +1035,6 @@
           e.preventDefault(); e.stopPropagation();
           if (this.app.weapon) this.app.weapon.startReload();
         }, { passive: false });
-        DOM.viewBtn.addEventListener('pointerdown', (e) => {
-          e.preventDefault(); e.stopPropagation();
-          if (this.app.isGameplayActive()) this.app.player.toggleView();
-        }, { passive: false });
         DOM.dodgeBtn.addEventListener('pointerdown', (e) => {
           e.preventDefault(); e.stopPropagation();
           if (this.app.isGameplayActive()) this.app.player.tryDodge(this.moveX, this.moveY);
@@ -1134,14 +1148,15 @@
           return { active: false, object: line, life: 0, maxLife: 0.07 };
         }, count);
       }
-      spawn(from, to) {
+      spawn(from, to, color) {
         const t = this.pool.acquire();
         const a = t.object.geometry.attributes.position.array;
         a[0] = from.x; a[1] = from.y; a[2] = from.z;
         a[3] = to.x; a[4] = to.y; a[5] = to.z;
         t.object.geometry.attributes.position.needsUpdate = true;
+        if (color !== undefined) t.object.material.color.setHex(color);
         t.object.visible = true;
-        t.object.material.opacity = .9;
+        t.object.material.opacity = .92;
         t.life = t.maxLife;
       }
       update(dt) {
@@ -1221,17 +1236,13 @@
       reset() { this.pool.reset(); }
     }
 
+    
     class Weapon {
       constructor(app) {
         this.app = app;
         this.firing = false;
         this.ads = false;
         this.adsBlend = 0;
-        this.magSize = CFG.magSize;
-        this.ammo = this.magSize;
-        this.reserve = CFG.reserveAmmo;
-        this.damage = CFG.baseDamage;
-        this.reloadDuration = CFG.reloadTime;
         this.reloading = false;
         this.reloadTimer = 0;
         this.cooldown = 0;
@@ -1239,15 +1250,11 @@
         this.sideRecoil = 0;
         this.muzzleTimer = 0;
         this.emptyCooldown = 0;
-        this.fpsRoot = this.buildWeapon(true);
-        this.worldRoot = this.buildWeapon(false);
+        this.archetypeKey = 'rifle';
+        this.tier = 0;
+        this.profile = WEAPON_ARCHETYPES[this.archetypeKey];
+        this.fpsRoot = this.buildWeapon();
         this.app.camera.add(this.fpsRoot);
-        this.app.player.character.weaponMount.add(this.worldRoot);
-        this.worldRoot.scale.setScalar(.86);
-        this.worldRoot.rotation.set(0.1, 0, 0.05);
-        this.worldRoot.position.set(0.02, -0.02, 0.05);
-        this.baseHip = new THREE.Vector3(.44, -.39, -.78);
-        this.baseADS = new THREE.Vector3(.012, -.275, -.53);
         this.raycaster = new THREE.Raycaster();
         this.raycaster.far = 75;
         this.enemyHits = [];
@@ -1257,89 +1264,136 @@
         this.muzzleWorld = new THREE.Vector3();
         this.rightWorld = new THREE.Vector3();
         this.upWorld = new THREE.Vector3();
-        this.normalMatrix = new THREE.Matrix3();
+        this.baseHip = new THREE.Vector3(.44, -.41, -.82);
+        this.baseADS = new THREE.Vector3(.02, -.285, -.57);
+        this.reset();
       }
-      buildWeapon(firstPerson) {
+      buildWeapon() {
         const root = new THREE.Group();
-        root.name = firstPerson ? 'FPSWeapon' : 'WorldWeapon';
-        const m = this.app.assets.materials;
+        root.name = 'FPSWeapon';
         const g = this.app.assets.geometries;
-
-        const receiver = new THREE.Mesh(g.receiver, m.gunMetal);
-        receiver.position.set(0, 0, 0);
-        root.add(receiver);
-
-        const dust = new THREE.Mesh(g.dustCover, m.gunDark);
-        dust.position.set(0, .12, -.03);
-        dust.rotation.x = -.08;
-        root.add(dust);
-
-        const barrel = new THREE.Mesh(g.barrel, m.gunDark);
-        barrel.rotation.x = Math.PI / 2;
-        barrel.position.set(0, .025, -.62);
-        root.add(barrel);
-
-        const handguard = new THREE.Mesh(g.handguard, m.woodDark);
-        handguard.position.set(0, -.025, -.35);
-        root.add(handguard);
-
-        const stock = new THREE.Mesh(g.stock, m.woodDark);
-        stock.position.set(0, -.08, .42);
-        stock.rotation.x = -.18;
-        root.add(stock);
-
-        const grip = new THREE.Mesh(g.grip, m.woodDark);
-        grip.position.set(.02, -.22, .08);
-        grip.rotation.x = -.28;
-        root.add(grip);
-
-        const mag = new THREE.Mesh(g.magazine, m.magazine);
-        mag.position.set(0, -.28, -.12);
-        mag.rotation.x = -.16;
-        root.add(mag);
-        root.userData.magazine = mag;
-
-        const frontSight = new THREE.Mesh(g.frontSight, m.gunDark);
-        frontSight.position.set(0, .16, -.66);
-        root.add(frontSight);
-
-        const rearSight = new THREE.Mesh(g.rearSight, m.gunDark);
-        rearSight.position.set(0, .17, -.08);
-        root.add(rearSight);
-
+        const m = this.app.assets.materials;
+        const make = (geom, mat, x, y, z, rx=0, ry=0, rz=0, sx=1, sy=1, sz=1) => {
+          const mesh = new THREE.Mesh(geom, mat.clone ? mat.clone() : mat);
+          mesh.position.set(x, y, z);
+          mesh.rotation.set(rx, ry, rz);
+          mesh.scale.set(sx, sy, sz);
+          root.add(mesh);
+          return mesh;
+        };
+        const receiver = make(g.receiver, m.gunMetal, 0, 0, 0, 0, 0, 0, 1.18, 1.08, 1.14);
+        const dust = make(g.dustCover, m.gunDark, 0, .13, -.03, -.08, 0, 0, 1.08, 1.0, 1.05);
+        const barrel = make(g.barrel, m.gunDark, 0, .03, -.72, Math.PI/2, 0, 0, 1, 1, 1.25);
+        const handguard = make(g.handguard, m.woodDark, 0, -.02, -.43, 0, 0, 0, 1.05, 1.0, 1.25);
+        const stock = make(g.stock, m.woodDark, 0, -.1, .43, -.18, 0, 0, .95, .9, 1.18);
+        const grip = make(g.grip, m.woodDark, .02, -.24, .08, -.32, 0, 0, 1, 1.05, 1);
+        const mag = make(g.magazine, m.magazine, 0, -.29, -.12, -.16, 0, 0, 1, 1.08, 1);
+        const frontSight = make(g.frontSight, m.gunDark, 0, .16, -.79, 0, 0, 0, .9, 1.15, .9);
+        const rearSight = make(g.rearSight, m.gunDark, 0, .17, -.06, 0, 0, 0, 1.05, 1.0, .9);
         const muzzle = new THREE.Group();
-        muzzle.position.set(0, .025, -.87);
+        muzzle.position.set(0, .03, -.98);
         root.add(muzzle);
-        root.userData.muzzle = muzzle;
-
-        const flash = new THREE.Mesh(g.muzzleFlash, m.muzzleFlash);
+        const flash = new THREE.Mesh(g.muzzleFlash, m.muzzleFlash.clone());
         flash.rotation.x = Math.PI / 2;
         flash.visible = false;
         muzzle.add(flash);
-        root.userData.flash = flash;
-
-        root.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = !firstPerson && this.app.quality.shadows;
-            o.receiveShadow = false;
-          }
-        });
+        const rail = make(new THREE.BoxGeometry(.12, .06, .55), m.gunDark, 0, .23, -.28);
+        const shroud = make(new THREE.BoxGeometry(.1, .1, .38), m.gunMetal, 0, .02, -.88, 0, 0, 0, 1, .88, 1);
+        const energyCore = make(new THREE.CylinderGeometry(.04, .04, .28, 10), m.visor, 0, -.02, -.33, Math.PI/2, 0, 0, 1, 1, 1);
+        energyCore.visible = false;
+        const finL = make(new THREE.BoxGeometry(.05, .18, .18), m.visor, -.12, .04, -.18, 0, 0, .4);
+        const finR = make(new THREE.BoxGeometry(.05, .18, .18), m.visor, .12, .04, -.18, 0, 0, -.4);
+        finL.visible = finR.visible = false;
+        const dorsal = make(new THREE.ConeGeometry(.05, .28, 6), m.visor, 0, .29, -.48, 0, 0, Math.PI);
+        dorsal.visible = false;
+        root.userData = { receiver, dust, barrel, handguard, stock, grip, magazine:mag, frontSight, rearSight, muzzle, flash, rail, shroud, energyCore, finL, finR, dorsal };
+        root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; }});
         return root;
+      }
+      getTierData() { return WEAPON_TIERS[this.tier]; }
+      applyProfile(keepAmmo=false) {
+        this.profile = WEAPON_ARCHETYPES[this.archetypeKey];
+        const tier = this.getTierData();
+        this.magSize = this.profile.magSize + tier.magBonus;
+        this.damage = this.profile.damage * tier.mult;
+        this.reloadDuration = this.profile.reload * tier.reloadMult;
+        this.fireRate = Math.max(.048, this.profile.fireRate * (tier.laser ? .92 : 1));
+        this.bulletColor = tier.laser ? tier.flash : this.profile.bulletColor;
+        this.isLaser = tier.laser;
+        if (!keepAmmo) {
+          this.ammo = this.magSize;
+          this.reserve = Math.max(this.reserve || 0, this.profile.reserve);
+        } else {
+          this.ammo = Math.min(this.ammo, this.magSize);
+          this.reserve = Math.max(this.reserve, this.profile.reserve);
+        }
+        this.applyAppearance();
+        this.updateHUD();
+      }
+      applyAppearance() {
+        const t = this.getTierData();
+        const ud = this.fpsRoot.userData;
+        const setMat = (mesh, color, emissive=0x000000, ei=0) => {
+          if (!mesh || !mesh.material) return;
+          mesh.material.color.setHex(color);
+          if (mesh.material.emissive) mesh.material.emissive.setHex(emissive);
+          if ('emissiveIntensity' in mesh.material) mesh.material.emissiveIntensity = ei;
+        };
+        const palettes = {
+          rifle: { metal:0x2c3139, dark:0x12161c, accent:t.color, grip:this.tier === 0 ? 0x513226 : 0x243445 },
+          smg:   { metal:0x363b44, dark:0x15181d, accent:t.color, grip:this.tier === 0 ? 0x2c333d : 0x1f3143 },
+          heavy: { metal:0x3b302f, dark:0x151414, accent:t.color, grip:this.tier === 0 ? 0x4d3527 : 0x342a44 }
+        }[this.archetypeKey];
+        setMat(ud.receiver, palettes.metal, 0x08090f, .12);
+        setMat(ud.dust, palettes.dark, 0x04050a, .04);
+        setMat(ud.barrel, palettes.dark, 0x04050a, .04);
+        setMat(ud.rail, palettes.dark, 0x04050a, .04);
+        setMat(ud.shroud, palettes.metal, 0x08090f, .08);
+        setMat(ud.handguard, palettes.grip, t.emissive, this.tier >= 2 ? .28 : .08);
+        setMat(ud.stock, palettes.grip, t.emissive, this.tier >= 2 ? .22 : .06);
+        setMat(ud.grip, palettes.grip, t.emissive, this.tier >= 2 ? .18 : .04);
+        setMat(ud.magazine, this.tier >= 3 ? t.color : 0x171b22, t.emissive, this.tier >= 3 ? .4 : .06);
+        setMat(ud.frontSight, palettes.dark, 0x04050a, .04);
+        setMat(ud.rearSight, palettes.dark, 0x04050a, .04);
+        setMat(ud.energyCore, t.flash, t.flash, this.tier >= 2 ? 1.5 : .8);
+        setMat(ud.finL, t.flash, t.flash, this.tier >= 3 ? 1.35 : .5);
+        setMat(ud.finR, t.flash, t.flash, this.tier >= 3 ? 1.35 : .5);
+        setMat(ud.dorsal, t.flash, t.flash, this.tier >= 4 ? 1.8 : .6);
+        ud.energyCore.visible = this.tier >= 2;
+        ud.finL.visible = ud.finR.visible = this.tier >= 3;
+        ud.dorsal.visible = this.tier >= 4;
+        ud.flash.material.color.setHex(t.flash);
       }
       reset() {
         this.firing = false;
         this.ads = false;
         this.adsBlend = 0;
-        this.magSize = CFG.magSize;
-        this.ammo = this.magSize;
-        this.reserve = CFG.reserveAmmo;
-        this.damage = CFG.baseDamage;
-        this.reloadDuration = CFG.reloadTime;
         this.reloading = false;
         this.reloadTimer = 0;
         this.cooldown = 0;
         this.recoil = this.sideRecoil = 0;
-        this.updateHUD();
+        this.muzzleTimer = 0;
+        this.emptyCooldown = 0;
+        this.archetypeKey = 'rifle';
+        this.tier = 0;
+        this.reserve = CFG.reserveAmmo;
+        this.applyProfile(false);
+      }
+      setArchetype(key, keepAmmo=false) {
+        if (!WEAPON_ARCHETYPES[key]) return;
+        this.archetypeKey = key;
+        this.applyProfile(keepAmmo);
+        this.app.showBanner(`${this.profile.short} felvéve`);
+      }
+      randomizeArchetype() {
+        const keys = Object.keys(WEAPON_ARCHETYPES).filter(k => k !== this.archetypeKey);
+        this.setArchetype(keys[Math.floor(Math.random() * keys.length)], false);
+      }
+      upgradeTier() {
+        if (this.tier < WEAPON_TIERS.length - 1) this.tier++;
+        this.applyProfile(true);
+        this.ammo = this.magSize;
+        this.app.showBanner(`Fegyver fejlesztve: ${this.getTierData().title}`);
       }
       toggleADS() {
         if (this.reloading) return;
@@ -1359,10 +1413,14 @@
       }
       getSpread() {
         const moving = Math.hypot(this.app.input.moveX, this.app.input.moveY);
-        return (this.ads ? 0.00155 : 0.0095) + moving * (this.ads ? 0.0014 : 0.0065) + (this.app.player.sprinting ? 0.012 : 0);
+        const base = this.ads ? this.profile.adsSpread : this.profile.hipSpread;
+        const movePenalty = moving * (this.ads ? 0.0012 : 0.0052);
+        const sprintPenalty = this.app.player.sprinting ? 0.009 : 0;
+        const slidePenalty = this.app.player.slideTimer > 0 ? 0.0065 : 0;
+        return base + movePenalty + sprintPenalty + slidePenalty;
       }
       tryFire() {
-        if (this.cooldown > 0 || this.reloading || this.app.player.sprinting || !this.app.isGameplayActive()) return;
+        if (this.cooldown > 0 || this.reloading || !this.app.isGameplayActive()) return;
         if (this.ammo <= 0) {
           if (this.emptyCooldown <= 0) {
             this.app.audio.empty();
@@ -1370,20 +1428,20 @@
           }
           return;
         }
-        this.cooldown = CFG.fireRate;
+        this.app.player.sprinting = false;
+        this.cooldown = this.fireRate;
         this.ammo--;
-        this.recoil = Math.min(.105, this.recoil + (this.ads ? .021 : .037));
-        this.sideRecoil += rand(-.008, .008);
-        this.app.player.targetPitch = clamp(this.app.player.targetPitch + (this.ads ? .0085 : .015), CFG.pitchMin, CFG.pitchMax);
-        this.app.player.targetYaw += rand(-.0028, .0028);
-        this.muzzleTimer = .045;
+        this.recoil = Math.min(.12, this.recoil + (this.ads ? this.profile.adsRecoil : this.profile.hipRecoil) * this.getTierData().recoilMult);
+        this.sideRecoil += rand(-.008, .008) * this.getTierData().recoilMult;
+        this.app.player.targetPitch = clamp(this.app.player.targetPitch + (this.ads ? .0078 : .0135), CFG.pitchMin, CFG.pitchMax);
+        this.app.player.targetYaw += rand(-.0024, .0024);
+        this.muzzleTimer = this.isLaser ? .02 : .042;
         this.fpsRoot.userData.flash.visible = true;
-        this.worldRoot.userData.flash.visible = true;
-        this.app.audio.shot();
+        this.app.audio.shot(this.isLaser);
         this.fireRay();
-        this.ejectCasing();
+        if (!this.isLaser) this.ejectCasing();
         this.updateHUD();
-        if (this.ammo === 0 && this.reserve > 0) setTimeout(() => { if (this.ammo === 0) this.startReload(); }, 260);
+        if (this.ammo === 0 && this.reserve > 0) setTimeout(() => { if (this.ammo === 0) this.startReload(); }, 240);
       }
       fireRay() {
         this.app.camera.getWorldPosition(this.shootOrigin);
@@ -1394,7 +1452,6 @@
         this.shootDir.z += rand(-spread, spread);
         this.shootDir.normalize();
         this.raycaster.set(this.shootOrigin, this.shootDir);
-
         this.enemyHits.length = 0;
         this.worldHits.length = 0;
         this.raycaster.intersectObjects(this.app.enemyHitMeshes, false, this.enemyHits);
@@ -1409,25 +1466,23 @@
           const enemy = hit.object.userData.enemy;
           if (enemy && !enemy.dead) {
             const headshot = hit.object.userData.hitZone === 'head';
-            const dealt = this.damage * this.app.player.damageMultiplier * (headshot ? 1.65 : 1);
+            const dealt = this.damage * this.app.player.damageMultiplier * (headshot ? 1.6 : 1);
             enemy.takeDamage(dealt, hit.point);
             this.app.audio.hit();
             this.app.showHitmarker(headshot);
-            this.app.particles.burst(hit.point, headshot ? 0xff5577 : 0x6a1f37, headshot ? 7 : 4, 2.4, .35, 5, .045);
+            this.app.particles.burst(hit.point, headshot ? 0xff5577 : (this.isLaser ? 0x5de9ff : 0x6a1f37), headshot ? 7 : 4, 2.4, .35, 5, .045);
           } else {
             const normal = hit.face ? this.app.tmp.v2.copy(hit.face.normal).transformDirection(hit.object.matrixWorld) : this.app.tmp.up;
             this.app.decals.spawn(hit.point, normal);
-            this.app.particles.burst(hit.point, 0x9aa0aa, 4, 1.7, .32, 4.5, .035);
+            this.app.particles.burst(hit.point, this.isLaser ? 0x9feaff : 0x9aa0aa, 4, 1.7, .32, 4.5, .035);
           }
         }
-        const activeMuzzle = this.app.player.viewBlend > .5 ? this.worldRoot.userData.muzzle : this.fpsRoot.userData.muzzle;
-        activeMuzzle.getWorldPosition(this.muzzleWorld);
-        this.app.bullets.spawn(this.muzzleWorld, end);
-        this.app.particles.burst(this.muzzleWorld, 0x777780, 2, .34, .42, -.22, .045);
+        this.fpsRoot.userData.muzzle.getWorldPosition(this.muzzleWorld);
+        this.app.bullets.spawn(this.muzzleWorld, end, this.bulletColor);
+        this.app.particles.burst(this.muzzleWorld, this.isLaser ? 0x6ff7ff : 0xffca72, this.isLaser ? 4 : 2, .34, .42, -.22, .045);
       }
       ejectCasing() {
-        const activeMuzzle = this.app.player.viewBlend > .5 ? this.worldRoot.userData.muzzle : this.fpsRoot.userData.muzzle;
-        activeMuzzle.getWorldPosition(this.muzzleWorld);
+        this.fpsRoot.userData.muzzle.getWorldPosition(this.muzzleWorld);
         this.app.camera.getWorldDirection(this.app.tmp.v1);
         this.rightWorld.set(1, 0, 0).applyQuaternion(this.app.camera.quaternion);
         this.upWorld.set(0, 1, 0).applyQuaternion(this.app.camera.quaternion);
@@ -1438,78 +1493,65 @@
         this.cooldown = Math.max(0, this.cooldown - dt);
         this.emptyCooldown = Math.max(0, this.emptyCooldown - dt);
         this.adsBlend = damp(this.adsBlend, this.ads ? 1 : 0, 17, dt);
-        this.recoil = damp(this.recoil, 0, 22, dt);
+        this.recoil = damp(this.recoil, 0, 20, dt);
         this.sideRecoil = damp(this.sideRecoil, 0, 16, dt);
-
         if (this.firing) this.tryFire();
-
         if (this.reloading) {
           this.reloadTimer -= dt;
           const progress = 1 - this.reloadTimer / this.reloadDuration;
           const mag = this.fpsRoot.userData.magazine;
-          const worldMag = this.worldRoot.userData.magazine;
           const drop = Math.sin(clamp(progress, 0, 1) * Math.PI) * .27;
-          mag.position.y = -.28 - drop;
-          worldMag.position.y = -.28 - drop;
+          mag.position.y = -.29 - drop;
           if (this.reloadTimer <= 0) {
             const need = this.magSize - this.ammo;
             const take = Math.min(need, this.reserve);
             this.ammo += take;
             this.reserve -= take;
             this.reloading = false;
-            mag.position.y = worldMag.position.y = -.28;
+            mag.position.y = -.29;
+            this.updateHUD();
           }
         }
-
-        this.muzzleTimer -= dt;
-        const flashVisible = this.muzzleTimer > 0;
-        this.fpsRoot.userData.flash.visible = flashVisible;
-        this.worldRoot.userData.flash.visible = flashVisible;
-        if (flashVisible) {
-          const s = rand(.7, 1.25);
-          this.fpsRoot.userData.flash.scale.setScalar(s);
-          this.worldRoot.userData.flash.scale.setScalar(s);
+        if (this.muzzleTimer > 0) {
+          this.muzzleTimer -= dt;
+          if (this.muzzleTimer <= 0) this.fpsRoot.userData.flash.visible = false;
         }
-
-        const t = this.adsBlend;
-        this.fpsRoot.position.lerpVectors(this.baseHip, this.baseADS, t);
-        const moveMag = Math.hypot(this.app.input.moveX, this.app.input.moveY);
-        const bob = this.app.player.sprinting ? .8 : moveMag;
-        const time = this.app.elapsed;
-        this.fpsRoot.position.x += Math.sin(time * 8.4) * .008 * bob + this.sideRecoil;
-        this.fpsRoot.position.y += Math.abs(Math.cos(time * 8.4)) * .009 * bob - this.recoil * .55;
-        this.fpsRoot.position.z += this.app.player.sprinting ? .15 : 0;
-        this.fpsRoot.rotation.x = -.04 - this.recoil + (this.app.player.sprinting ? -.32 : 0);
-        this.fpsRoot.rotation.y = -.05 + this.sideRecoil * 1.8;
-        this.fpsRoot.rotation.z = -.02 + (this.app.player.sprinting ? -.22 : 0);
-        this.worldRoot.position.set(.02, -.02, .05 + this.recoil * 1.15);
-        this.worldRoot.rotation.x = .1 + this.recoil * 1.4;
-        this.worldRoot.rotation.y = 0;
-        this.worldRoot.rotation.z = .05 + this.sideRecoil * 1.2;
-        if (this.muzzleTimer > 0) this.app.player.character.rightArm.rotation.x -= this.recoil * 2.2;
-
-        this.fpsRoot.visible = this.app.player.viewBlend < .55;
-        this.worldRoot.visible = this.app.player.viewBlend > .25;
+        const bobSpeed = this.app.player.slideTimer > 0 ? 3 : this.app.player.sprinting ? 10.5 : 7.2;
+        const bobAmp = this.app.player.slideTimer > 0 ? .015 : this.app.player.sprinting ? .024 : .012;
+        const moveMag = clamp(Math.hypot(this.app.input.moveX, this.app.input.moveY), 0, 1);
+        const bob = Math.sin(this.app.elapsed * bobSpeed) * bobAmp * moveMag;
+        const bobY = Math.abs(Math.cos(this.app.elapsed * bobSpeed * .5)) * bobAmp * .75 * moveMag;
+        const slideLower = (this.app.player.slideTimer > 0 ? 1 - this.app.player.slideTimer / CFG.slideDuration : 0);
+        const targetPos = this.app.tmp.v4.copy(this.baseHip).lerp(this.baseADS, this.adsBlend);
+        targetPos.x += bob + this.sideRecoil * 4.0;
+        targetPos.y -= bobY + this.recoil * 1.85 + slideLower * .06 + (this.app.player.sprinting ? .06 : 0);
+        targetPos.z += this.recoil * 1.2 + (this.app.player.sprinting ? .08 : 0);
+        this.fpsRoot.position.lerp(targetPos, 1 - Math.exp(-18 * dt));
+        this.fpsRoot.rotation.y = this.sideRecoil * 2.1;
+        this.fpsRoot.rotation.x = -0.03 - this.recoil * 1.35;
+        this.fpsRoot.rotation.z = 0.03 + this.sideRecoil * 1.15;
         this.updateHUD();
       }
       updateHUD() {
         DOM.magText.textContent = this.ammo;
         DOM.reserveText.textContent = this.reserve;
-        DOM.reloadText.textContent = this.reloading ? `ÚJRATÖLTÉS ${Math.max(0, this.reloadTimer).toFixed(1)}s` : '';
+        DOM.reloadText.textContent = this.reloading ? `ÚJRATÖLTÉS ${Math.max(0, this.reloadTimer).toFixed(1)}s` : `${this.profile.short} · ${this.getTierData().title}`;
       }
     }
 
+    
     class Player {
       constructor(app) {
         this.app = app;
         this.position = new THREE.Vector3(0, 0, 9);
         this.velocity = new THREE.Vector3();
+        this.targetVelocity = new THREE.Vector3();
         this.moveDir = new THREE.Vector3();
         this.dodgeDir = new THREE.Vector3();
         this.yaw = 0;
         this.pitch = 0;
-        this.targetYaw = this.yaw;
-        this.targetPitch = this.pitch;
+        this.targetYaw = 0;
+        this.targetPitch = 0;
         this.health = 100;
         this.maxHealth = 100;
         this.level = 1;
@@ -1517,94 +1559,73 @@
         this.xpNeeded = 100;
         this.score = 0;
         this.kills = 0;
+        this.gold = 0;
         this.moveSpeedBonus = 1;
         this.damageMultiplier = 1;
         this.sprinting = false;
         this.dodgeCooldown = 0;
-        this.dodgeCooldownDuration = CFG.dodgeCooldown;
         this.dodgeTimer = 0;
+        this.slideTimer = 0;
+        this.slideCooldown = 0;
         this.invulnerable = 0;
-        this.viewMode = 'fps';
-        this.viewBlend = 0;
         this.cameraShake = 0;
-        this.character = this.buildCharacter();
-        this.app.scene.add(this.character.root);
-        this.cameraTarget = new THREE.Vector3();
-        this.cameraDesired = new THREE.Vector3();
-        this.lookTarget = new THREE.Vector3();
+        this.bobTime = 0;
         this.camRay = new THREE.Raycaster();
-        this.camRay.near = .08;
         this.assistRay = new THREE.Raycaster();
         this.assistRay.near = .05;
         this.assistHits = [];
       }
-      buildCharacter() {
-        const root = new THREE.Group();
-        root.position.copy(this.position);
-        const m = this.app.assets.materials;
-        const g = this.app.assets.geometries;
-        const pelvis = new THREE.Mesh(g.pelvis, m.armorDark); pelvis.position.y = .92; root.add(pelvis);
-        const torso = new THREE.Mesh(g.torso, m.armor); torso.position.y = 1.42; root.add(torso);
-        const head = new THREE.Mesh(g.playerHead, m.skin); head.position.y = 1.95; root.add(head);
-        const visor = new THREE.Mesh(g.visor, m.visor); visor.position.set(0, 1.98, -.22); root.add(visor);
-        const leftLeg = new THREE.Mesh(g.limb, m.armorDark); leftLeg.position.set(-.2, .45, 0); root.add(leftLeg);
-        const rightLeg = new THREE.Mesh(g.limb, m.armorDark); rightLeg.position.set(.2, .45, 0); root.add(rightLeg);
-        const leftArm = new THREE.Mesh(g.arm, m.armor); leftArm.position.set(-.45, 1.42, -.07); leftArm.rotation.z = -.2; root.add(leftArm);
-        const rightArm = new THREE.Mesh(g.arm, m.armor); rightArm.position.set(.45, 1.42, -.07); rightArm.rotation.z = .2; root.add(rightArm);
-        const weaponMount = new THREE.Group(); weaponMount.position.set(.26, 1.46, -.48); root.add(weaponMount);
-        root.traverse((o) => { if (o.isMesh) { o.castShadow = this.app.quality.shadows; o.receiveShadow = false; } });
-        return { root, pelvis, torso, head, leftLeg, rightLeg, leftArm, rightArm, weaponMount };
-      }
       reset() {
         this.position.set(0, 0, 9);
         this.velocity.set(0, 0, 0);
+        this.targetVelocity.set(0, 0, 0);
         this.yaw = this.targetYaw = 0;
         this.pitch = this.targetPitch = 0;
         this.health = this.maxHealth = 100;
         this.level = 1;
         this.xp = 0;
         this.xpNeeded = 100;
-        this.score = this.kills = 0;
+        this.score = this.kills = this.gold = 0;
         this.moveSpeedBonus = this.damageMultiplier = 1;
         this.sprinting = false;
-        this.dodgeCooldown = this.dodgeTimer = this.invulnerable = 0;
-        this.dodgeCooldownDuration = CFG.dodgeCooldown;
-        this.viewMode = 'fps';
-        this.viewBlend = 0;
+        this.dodgeCooldown = this.dodgeTimer = this.slideTimer = this.slideCooldown = this.invulnerable = 0;
         this.cameraShake = 0;
-        this.character.root.position.copy(this.position);
-        this.character.root.rotation.y = this.yaw;
-      }
-      toggleView() {
-        this.viewMode = this.viewMode === 'fps' ? 'rpg' : 'fps';
-        DOM.modeBadge.textContent = this.viewMode.toUpperCase();
+        this.bobTime = 0;
       }
       tryDodge(mx, my) {
-        if (this.dodgeCooldown > 0 || this.dodgeTimer > 0) return;
+        if (this.dodgeCooldown > 0 || this.dodgeTimer > 0 || this.slideTimer > 0) return;
         const len = Math.hypot(mx, my);
-        if (len > .12) {
+        if (len > .35 && (my > .55 || this.sprinting)) {
+          this.slideTimer = CFG.slideDuration;
+          this.slideCooldown = CFG.slideCooldown;
+          this.dodgeCooldown = CFG.slideCooldown;
           this.dodgeDir.set(mx / len, 0, -my / len).applyAxisAngle(this.app.tmp.up, this.yaw);
+          this.invulnerable = .18;
+          this.app.weapon.ads = false;
+          DOM.adsBtn.classList.remove('active');
+          DOM.crosshair.classList.remove('ads');
         } else {
-          this.dodgeDir.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+          if (len > .12) this.dodgeDir.set(mx / len, 0, -my / len).applyAxisAngle(this.app.tmp.up, this.yaw);
+          else this.dodgeDir.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+          this.dodgeTimer = CFG.dodgeDuration;
+          this.dodgeCooldown = CFG.dodgeCooldown;
+          this.invulnerable = .26;
         }
-        this.dodgeTimer = CFG.dodgeDuration;
-        this.dodgeCooldown = this.dodgeCooldownDuration;
-        this.invulnerable = .28;
       }
       addXP(amount) {
         this.xp += amount;
         if (this.xp >= this.xpNeeded) {
           this.xp -= this.xpNeeded;
           this.level++;
-          this.xpNeeded = Math.floor(this.xpNeeded * 1.32 + 20);
+          this.xpNeeded = Math.floor(this.xpNeeded * 1.28 + 24);
           this.app.openUpgrade();
         }
       }
       damage(amount) {
         if (this.invulnerable > 0 || !this.app.isGameplayActive()) return;
         this.health = Math.max(0, this.health - amount);
-        this.invulnerable = .32;
-        this.cameraShake = Math.max(this.cameraShake, .16);
+        this.invulnerable = .28;
+        this.cameraShake = Math.max(this.cameraShake, .14);
         this.app.audio.hurt();
         DOM.damageFlash.classList.remove('show');
         void DOM.damageFlash.offsetWidth;
@@ -1630,49 +1651,6 @@
           }
         }
       }
-      update(dt) {
-        const look = this.app.input.consumeLook();
-        const sens = CFG.lookSensitivity * (this.app.weapon.ads ? CFG.adsSensitivity : 1);
-        this.targetYaw -= look.dx * sens;
-        this.targetPitch = clamp(this.targetPitch - look.dy * sens * CFG.verticalSensitivity, CFG.pitchMin, CFG.pitchMax);
-        this.applyAimAssist(dt, look);
-        this.yaw = damp(this.yaw, this.targetYaw, CFG.lookSmoothing, dt);
-        this.pitch = damp(this.pitch, this.targetPitch, CFG.lookSmoothing, dt);
-
-        this.dodgeCooldown = Math.max(0, this.dodgeCooldown - dt);
-        this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
-        this.invulnerable = Math.max(0, this.invulnerable - dt);
-        this.cameraShake = Math.max(0, this.cameraShake - dt * 1.8);
-
-        const mx = this.app.input.moveX;
-        const my = this.app.input.moveY;
-        const mag = clamp(Math.hypot(mx, my), 0, 1);
-        this.sprinting = my > .87 && mag > .9 && !this.app.weapon.ads && !this.app.weapon.firing && !this.app.weapon.reloading && this.dodgeTimer <= 0;
-
-        if (this.dodgeTimer > 0) {
-          this.velocity.copy(this.dodgeDir).multiplyScalar(CFG.dodgeSpeed);
-        } else {
-          this.moveDir.set(mx, 0, -my);
-          if (mag > .01) this.moveDir.normalize().applyAxisAngle(this.app.tmp.up, this.yaw);
-          let speed = CFG.baseMoveSpeed * this.moveSpeedBonus;
-          if (this.sprinting) speed *= CFG.sprintMultiplier;
-          if (this.app.weapon.ads) speed *= CFG.adsMoveMultiplier;
-          this.velocity.copy(this.moveDir).multiplyScalar(speed * mag);
-        }
-
-        this.position.addScaledVector(this.velocity, dt);
-        this.resolveCollision(this.position);
-        this.character.root.position.copy(this.position);
-        const bodyYaw = this.viewMode === 'rpg' && mag > .1 ? Math.atan2(-this.velocity.x, -this.velocity.z) : this.yaw;
-        this.character.root.rotation.y = damp(this.character.root.rotation.y, bodyYaw, 10, dt);
-        this.animateCharacter(dt, mag);
-
-        const targetBlend = this.viewMode === 'rpg' ? 1 : 0;
-        this.viewBlend = damp(this.viewBlend, targetBlend, 8, dt);
-        this.updateCamera(dt);
-
-        DOM.dodgeFill.style.height = `${clamp(this.dodgeCooldown / this.dodgeCooldownDuration, 0, 1) * 100}%`;
-      }
       angleDelta(target, current) {
         let d = target - current;
         while (d > Math.PI) d -= Math.PI * 2;
@@ -1681,11 +1659,7 @@
       }
       applyAimAssist(dt, look) {
         if ((!this.app.weapon.ads && !this.app.weapon.firing) || Math.hypot(look.dx, look.dy) > 18) return;
-        let found = false;
-        let bestEnemy = null;
-        let bestYawDiff = 0;
-        let bestPitchDiff = 0;
-        let bestScore = Infinity;
+        let bestEnemy = null, bestYawDiff = 0, bestPitchDiff = 0, bestScore = Infinity;
         const eyeY = this.position.y + CFG.eyeHeight;
         for (let i = 0; i < this.app.enemies.length; i++) {
           const enemy = this.app.enemies[i];
@@ -1698,18 +1672,12 @@
           const targetPitch = Math.atan2(enemy.config.height * .62 - eyeY, horizontal);
           const yawDiff = this.angleDelta(targetYaw, this.targetYaw);
           const pitchDiff = targetPitch - this.targetPitch;
-          const cone = CFG.aimAssistCone * (this.app.weapon.ads ? 1 : .72);
+          const cone = CFG.aimAssistCone * (this.app.weapon.ads ? 1 : .7);
           if (Math.abs(yawDiff) > cone || Math.abs(pitchDiff) > cone * .82) continue;
-          const score = Math.abs(yawDiff) + Math.abs(pitchDiff) * 1.15 + horizontal * .0015;
-          if (score < bestScore) {
-            bestScore = score;
-            bestEnemy = enemy;
-            bestYawDiff = yawDiff;
-            bestPitchDiff = pitchDiff;
-            found = true;
-          }
+          const score = Math.abs(yawDiff) + Math.abs(pitchDiff) * 1.08 + horizontal * .0014;
+          if (score < bestScore) { bestScore = score; bestEnemy = enemy; bestYawDiff = yawDiff; bestPitchDiff = pitchDiff; }
         }
-        if (!found || !bestEnemy) return;
+        if (!bestEnemy) return;
         const origin = this.app.tmp.v3.set(this.position.x, eyeY, this.position.z);
         const target = this.app.tmp.v4.set(bestEnemy.group.position.x, bestEnemy.group.position.y + bestEnemy.config.height * .62, bestEnemy.group.position.z);
         const direction = this.app.tmp.v5.subVectors(target, origin);
@@ -1722,67 +1690,71 @@
           this.assistRay.intersectObjects(this.app.collisionMeshes, false, this.assistHits);
           if (this.assistHits.length) return;
         }
-        const strength = CFG.aimAssistStrength * (this.app.weapon.ads ? 1 : .46);
+        const strength = CFG.aimAssistStrength * (this.app.weapon.ads ? 1 : .44);
         this.targetYaw += bestYawDiff * Math.min(.16, strength * dt);
         this.targetPitch = clamp(this.targetPitch + bestPitchDiff * Math.min(.14, strength * dt), CFG.pitchMin, CFG.pitchMax);
       }
-      animateCharacter(dt, mag) {
-        const speed = this.sprinting ? 13 : 8;
-        const swing = Math.sin(this.app.elapsed * speed) * .65 * mag;
-        this.character.leftLeg.rotation.x = swing;
-        this.character.rightLeg.rotation.x = -swing;
-        this.character.leftArm.rotation.x = -swing * .28 - .5;
-        this.character.rightArm.rotation.x = swing * .28 - .75;
-        this.character.torso.rotation.z = Math.sin(this.app.elapsed * speed * .5) * .025 * mag;
-        if (this.app.weapon.reloading) {
-          const p = 1 - this.app.weapon.reloadTimer / this.app.weapon.reloadDuration;
-          this.character.leftArm.rotation.x = -.5 - Math.sin(p * Math.PI) * .9;
+      update(dt) {
+        const look = this.app.input.consumeLook();
+        const sens = CFG.lookSensitivity * (this.app.weapon.ads ? CFG.adsSensitivity : 1);
+        this.targetYaw -= look.dx * sens;
+        this.targetPitch = clamp(this.targetPitch - look.dy * sens * CFG.verticalSensitivity, CFG.pitchMin, CFG.pitchMax);
+        this.applyAimAssist(dt, look);
+        this.yaw = damp(this.yaw, this.targetYaw, CFG.lookSmoothing, dt);
+        this.pitch = damp(this.pitch, this.targetPitch, CFG.lookSmoothing, dt);
+        this.dodgeCooldown = Math.max(0, this.dodgeCooldown - dt);
+        this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
+        this.slideCooldown = Math.max(0, this.slideCooldown - dt);
+        this.slideTimer = Math.max(0, this.slideTimer - dt);
+        this.invulnerable = Math.max(0, this.invulnerable - dt);
+        this.cameraShake = Math.max(0, this.cameraShake - dt * 1.8);
+        const mx = this.app.input.moveX;
+        const my = this.app.input.moveY;
+        const mag = clamp(Math.hypot(mx, my), 0, 1);
+        this.moveDir.set(mx, 0, -my);
+        if (mag > .01) this.moveDir.normalize().applyAxisAngle(this.app.tmp.up, this.yaw);
+        this.sprinting = my > .87 && mag > .9 && !this.app.weapon.ads && !this.app.weapon.firing && !this.app.weapon.reloading && this.dodgeTimer <= 0 && this.slideTimer <= 0;
+        if (this.slideTimer > 0) {
+          const slideFactor = Math.max(.2, this.slideTimer / CFG.slideDuration);
+          this.targetVelocity.copy(this.dodgeDir).multiplyScalar(CFG.slideSpeed * slideFactor);
+        } else if (this.dodgeTimer > 0) {
+          this.targetVelocity.copy(this.dodgeDir).multiplyScalar(CFG.dodgeSpeed);
+        } else {
+          let speed = CFG.baseMoveSpeed * this.moveSpeedBonus;
+          if (this.sprinting) speed *= CFG.sprintMultiplier;
+          if (this.app.weapon.ads) speed *= CFG.adsMoveMultiplier;
+          this.targetVelocity.copy(this.moveDir).multiplyScalar(speed * mag);
         }
+        const accel = this.slideTimer > 0 ? 16 : 19;
+        this.velocity.x = damp(this.velocity.x, this.targetVelocity.x, accel, dt);
+        this.velocity.z = damp(this.velocity.z, this.targetVelocity.z, accel, dt);
+        this.position.addScaledVector(this.velocity, dt);
+        this.resolveCollision(this.position);
+        const planarSpeed = Math.hypot(this.velocity.x, this.velocity.z);
+        this.bobTime += dt * (planarSpeed > .1 ? planarSpeed * 1.9 : 1.2);
+        this.updateCamera(dt, planarSpeed);
+        DOM.dodgeFill.style.height = `${clamp(this.dodgeCooldown / Math.max(CFG.dodgeCooldown, CFG.slideCooldown), 0, 1) * 100}%`;
       }
-      updateCamera(dt) {
+      updateCamera(dt, planarSpeed) {
         const forward = this.app.tmp.v1.set(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch), -Math.cos(this.yaw) * Math.cos(this.pitch)).normalize();
-        const eye = this.app.tmp.v2.set(this.position.x, this.position.y + CFG.eyeHeight, this.position.z);
-        const fpsPos = this.app.tmp.v3.copy(eye);
-
-        this.cameraTarget.set(this.position.x, this.position.y + 1.35, this.position.z);
-        this.cameraDesired.copy(this.cameraTarget).addScaledVector(forward, -CFG.thirdDistance);
-        this.cameraDesired.y += CFG.thirdHeight;
-
-        const blend = this.viewBlend;
-        if (blend > .03) {
-          const toCam = this.app.tmp.v4.copy(this.cameraDesired).sub(this.cameraTarget);
-          const dist = toCam.length();
-          if (dist > .001) {
-            toCam.multiplyScalar(1 / dist);
-            this.camRay.set(this.cameraTarget, toCam);
-            this.camRay.far = dist;
-            const hit = this.camRay.intersectObjects(this.app.collisionMeshes, false)[0];
-            if (hit) this.cameraDesired.copy(this.cameraTarget).addScaledVector(toCam, Math.max(.5, hit.distance - .32));
-          }
-        }
-
-
-        const desired = this.app.tmp.v5.copy(fpsPos).lerp(this.cameraDesired, blend);
+        const bobAmp = this.slideTimer > 0 ? .018 : this.sprinting ? .028 : .016;
+        const bobX = Math.sin(this.bobTime * 7.2) * bobAmp * clamp(planarSpeed / 7, 0, 1);
+        const bobY = Math.abs(Math.cos(this.bobTime * 6.6)) * bobAmp * .8 * clamp(planarSpeed / 7, 0, 1);
+        const slideDrop = this.slideTimer > 0 ? CFG.slideCameraDrop * (this.slideTimer / CFG.slideDuration) : 0;
+        const desired = this.app.tmp.v2.set(this.position.x + bobX, this.position.y + CFG.eyeHeight - bobY - slideDrop, this.position.z);
         const shake = this.cameraShake;
         if (shake > 0) {
           desired.x += rand(-shake, shake);
           desired.y += rand(-shake, shake);
           desired.z += rand(-shake, shake);
         }
-        this.app.camera.position.lerp(desired, 1 - Math.exp(-18 * dt));
-
-        if (blend < .5) {
-          this.app.camera.rotation.order = 'YXZ';
-          this.app.camera.rotation.y = this.yaw;
-          this.app.camera.rotation.x = this.pitch;
-          this.app.camera.rotation.z = 0;
-        } else {
-          this.lookTarget.copy(this.cameraTarget).addScaledVector(forward, 6);
-          this.lookTarget.y += .15;
-          this.app.camera.lookAt(this.lookTarget);
-        }
-        const targetFov = this.app.weapon.ads ? 47 : 72;
-        this.app.camera.fov = damp(this.app.camera.fov, targetFov, 15, dt);
+        this.app.camera.position.lerp(desired, 1 - Math.exp(-22 * dt));
+        this.app.camera.rotation.order = 'YXZ';
+        this.app.camera.rotation.y = this.yaw;
+        this.app.camera.rotation.x = this.pitch;
+        this.app.camera.rotation.z = 0;
+        const targetFov = this.app.weapon.ads ? 49 : this.slideTimer > 0 ? 78 : this.sprinting ? 76 : 72;
+        this.app.camera.fov = damp(this.app.camera.fov, targetFov, 16, dt);
         this.app.camera.updateProjectionMatrix();
       }
     }
@@ -1951,7 +1923,10 @@
         this.app.player.score += this.config.score;
         this.app.player.addXP(this.config.xp);
         this.app.particles.burst(this.group.position.clone().setY(this.config.height * .55), this.type === 'brute' ? 0xb8a691 : 0x6b1b58, this.type === 'brute' ? 14 : 9, 3.0, .55, 6, .075);
-        if (chance(.27)) this.app.spawnPickup(this.group.position, this.type === 'brute' ? .55 : .25);
+        this.app.spawnPickup(this.group.position, 0, 'gold');
+        this.app.spawnPickup(this.group.position, 0, 'ammo');
+        if (chance(.18)) this.app.spawnPickup(this.group.position, .5, 'weapon');
+        if (chance(.22)) this.app.spawnPickup(this.group.position, this.type === 'brute' ? .55 : .25);
         for (let i = 0; i < this.hitMeshes.length; i++) {
           const idx = this.app.enemyHitMeshes.indexOf(this.hitMeshes[i]);
           if (idx >= 0) this.app.enemyHitMeshes.splice(idx, 1);
@@ -2267,10 +2242,10 @@
           throw new Error('A WebGL renderer nem hozható létre. Kapcsold ki az energiatakarékos módot, zárj be néhány Safari lapot, majd nyisd meg újra a játékot.');
         }
         if (!this.renderer.getContext()) throw new Error('A készüléken nem érhető el működő WebGL környezet.');
-        this.renderer.setClearColor(0x9ebbd0, 1);
+        this.renderer.setClearColor(0xd0dded, 1);
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = this.qualityName === 'high' ? 1.38 : 1.3;
+        this.renderer.toneMappingExposure = this.qualityName === 'high' ? 1.52 : 1.44;
         this.renderer.shadowMap.enabled = this.quality.shadows;
         this.renderer.shadowMap.type = this.qualityName === 'high' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
         canvas.addEventListener('webglcontextlost', (e) => {
@@ -2284,12 +2259,12 @@
       }
       buildScene() {
         this.scene = new THREE.Scene();
-        this.scene.fog = this.qualityName === 'low' ? new THREE.Fog(0x9fb4c4, 22, 72) : new THREE.FogExp2(0xa7bdcc, .0115);
+        this.scene.fog = this.qualityName === 'low' ? new THREE.Fog(0xcfdceb, 26, 78) : new THREE.FogExp2(0xc7d8e8, .0082);
         this.camera = new THREE.PerspectiveCamera(72, 1, .05, 105);
         this.scene.add(this.camera);
-        const hemi = new THREE.HemisphereLight(0xe4f5ff, 0x766a72, this.qualityName === 'high' ? 2.25 : 2.05);
+        const hemi = new THREE.HemisphereLight(0xf4fbff, 0x887a70, this.qualityName === 'high' ? 2.7 : 2.45);
         this.scene.add(hemi);
-        const sun = new THREE.DirectionalLight(0xfff0cf, this.qualityName === 'high' ? 2.75 : 2.45);
+        const sun = new THREE.DirectionalLight(0xfff6da, this.qualityName === 'high' ? 3.15 : 2.85);
         sun.position.set(-11, 28, 13);
         sun.castShadow = this.quality.shadows;
         if (this.quality.shadows) {
@@ -2300,10 +2275,10 @@
           sun.shadow.bias = -.00065;
         }
         this.scene.add(sun);
-        const coolFill = new THREE.DirectionalLight(0x8fdcff, .72);
+        const coolFill = new THREE.DirectionalLight(0xa9e8ff, 1.08);
         coolFill.position.set(16, 10, 10);
         this.scene.add(coolFill);
-        const riftFill = new THREE.DirectionalLight(0xff6f98, .34);
+        const riftFill = new THREE.DirectionalLight(0xff7aa0, .52);
         riftFill.position.set(0, 8, -20);
         this.scene.add(riftFill);
       }
@@ -2382,9 +2357,9 @@
         c.width = c.height = size;
         const ctx = c.getContext('2d');
         const grad = ctx.createLinearGradient(0, 0, size, size);
-        grad.addColorStop(0, '#a69e91');
-        grad.addColorStop(.5, '#777b7e');
-        grad.addColorStop(1, '#8b7f83');
+        grad.addColorStop(0, '#c8c0b4');
+        grad.addColorStop(.5, '#9d9ea2');
+        grad.addColorStop(1, '#b0a6a9');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, size, size);
         ctx.strokeStyle = 'rgba(235,242,244,.18)';
@@ -2411,10 +2386,10 @@
         canvas.height = 256;
         const ctx = canvas.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, '#b9d9ee');
-        gradient.addColorStop(.38, '#99bfd5');
-        gradient.addColorStop(.7, '#9b93aa');
-        gradient.addColorStop(1, '#667889');
+        gradient.addColorStop(0, '#eef8ff');
+        gradient.addColorStop(.32, '#d2e8f5');
+        gradient.addColorStop(.68, '#a8c2d3');
+        gradient.addColorStop(1, '#748796');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 16, 256);
         const texture = new THREE.CanvasTexture(canvas);
@@ -2428,7 +2403,7 @@
       }
       buildArena() {
         this.buildSky();
-        const floorMat = new THREE.MeshPhongMaterial({ map: this.createGroundTexture(), color: 0xd3d0c8, shininess: 10 });
+        const floorMat = new THREE.MeshPhongMaterial({ map: this.createGroundTexture(), color: 0xe1ddd3, shininess: 18 });
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(46, 46, 1, 1), floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = this.quality.shadows;
@@ -2436,7 +2411,7 @@
         this.scene.add(floor);
         this.collisionMeshes.push(floor);
 
-        const wallMat = new THREE.MeshPhongMaterial({ color: 0x777983, emissive: 0x17151a, shininess: 18 });
+        const wallMat = new THREE.MeshPhongMaterial({ color: 0x9fa5af, emissive: 0x232328, shininess: 24 });
         const wallGeomX = new THREE.BoxGeometry(46, 4.8, 1.0);
         const wallGeomZ = new THREE.BoxGeometry(1.0, 4.8, 46);
         const wallData = [
@@ -2454,8 +2429,8 @@
           this.collisionMeshes.push(wall);
         }
 
-        const stoneMat = new THREE.MeshPhongMaterial({ color: 0x8d8985, emissive: 0x171419, shininess: 16 });
-        const rockMat = new THREE.MeshPhongMaterial({ color: 0x6e7075, emissive: 0x121216, flatShading: true, shininess: 7 });
+        const stoneMat = new THREE.MeshPhongMaterial({ color: 0xb8b1a8, emissive: 0x1d1b1d, shininess: 22 });
+        const rockMat = new THREE.MeshPhongMaterial({ color: 0x8f949c, emissive: 0x17191c, flatShading: true, shininess: 12 });
         const columnGeom = new THREE.CylinderGeometry(.85, 1.08, 4.8, 8);
         const ruinGeom = new THREE.BoxGeometry(3.2, 2.2, 1.0);
         const rockGeom = new THREE.DodecahedronGeometry(1.35, 0);
@@ -2587,30 +2562,44 @@
         const enemy = new Enemy(this, type, x, z, wave);
         this.enemies.push(enemy);
       }
-      spawnPickup(position, boostedChance) {
-        let type;
-        const r = Math.random();
-        if (r < .35) type = 'ammo';
-        else if (r < .65) type = 'health';
-        else if (r < .82 + boostedChance * .1) type = 'damage';
-        else type = 'speed';
-        const colors = { ammo:0xffc348, health:0xff3d62, damage:0xa65cff, speed:0x48e7ff };
+      spawnPickup(position, boostedChance, forcedType) {
+        let type = forcedType;
+        if (!type) {
+          const r = Math.random();
+          if (r < .25) type = 'health';
+          else if (r < .5) type = 'damage';
+          else if (r < .75) type = 'speed';
+          else type = 'weapon';
+        }
+        const colors = { ammo:0xffc348, health:0xff3d62, damage:0xa65cff, speed:0x48e7ff, gold:0xffdc63, weapon:0x5de9ff };
         const mesh = new THREE.Group();
-        const core = new THREE.Mesh(new THREE.OctahedronGeometry(.34, 0), new THREE.MeshPhongMaterial({ color: colors[type], emissive: colors[type], emissiveIntensity: 1.25, shininess: 80 }));
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(.48, .045, 6, 16), new THREE.MeshBasicMaterial({ color: colors[type], transparent: true, opacity: .75 }));
+        const coreGeom = type === 'weapon' ? new THREE.BoxGeometry(.42,.42,.42) : type === 'gold' ? new THREE.CylinderGeometry(.14,.14,.08,10) : new THREE.OctahedronGeometry(.34, 0);
+        const core = new THREE.Mesh(coreGeom, new THREE.MeshPhongMaterial({ color: colors[type], emissive: colors[type], emissiveIntensity: 1.25, shininess: 80 }));
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(type === 'gold' ? .28 : .48, .045, 6, 16), new THREE.MeshBasicMaterial({ color: colors[type], transparent: true, opacity: .75 }));
         ring.rotation.x = Math.PI / 2;
         mesh.add(core, ring);
         mesh.position.copy(position).setY(.65);
+        mesh.position.x += rand(-.45, .45);
+        mesh.position.z += rand(-.45, .45);
         this.scene.add(mesh);
-        this.pickups.push({ type, mesh, life: 18, baseY: .65 });
+        const pickup = { type, mesh, life: 18, baseY: .65, value: 0, weaponKey: null };
+        if (type === 'gold') pickup.value = Math.floor(rand(8, 17));
+        else if (type === 'ammo') pickup.value = Math.floor(rand(12, 27));
+        else if (type === 'weapon') {
+          const keys = Object.keys(WEAPON_ARCHETYPES);
+          pickup.weaponKey = keys[Math.floor(Math.random() * keys.length)];
+        }
+        this.pickups.push(pickup);
       }
       collectPickup(p) {
-        if (p.type === 'ammo') this.weapon.reserve = Math.min(360, this.weapon.reserve + 45);
+        if (p.type === 'ammo') this.weapon.reserve = Math.min(520, this.weapon.reserve + p.value);
         else if (p.type === 'health') this.player.health = Math.min(this.player.maxHealth, this.player.health + 34);
         else if (p.type === 'damage') this.damageBuff = 12;
         else if (p.type === 'speed') this.speedBuff = 12;
+        else if (p.type === 'gold') this.player.gold += p.value;
+        else if (p.type === 'weapon') this.weapon.setArchetype(p.weaponKey, false);
         this.audio.pickup();
-        this.particles.burst(p.mesh.position, p.type === 'health' ? 0xff3d62 : p.type === 'ammo' ? 0xffc348 : p.type === 'damage' ? 0xa65cff : 0x48e7ff, 9, 2.1, .55, 3, .05);
+        this.particles.burst(p.mesh.position, p.type === 'health' ? 0xff3d62 : p.type === 'ammo' ? 0xffc348 : p.type === 'damage' ? 0xa65cff : p.type === 'speed' ? 0x48e7ff : p.type === 'gold' ? 0xffdc63 : 0x5de9ff, 9, 2.1, .55, 3, .05);
         this.scene.remove(p.mesh);
         p.mesh.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
       }
@@ -2669,13 +2658,18 @@
       }
       randomUpgrades() {
         const pool = [
-          { title:'Rift-páncél', description:'+20 maximális életerő és azonnali teljes gyógyulás.', apply:() => { this.player.maxHealth += 20; this.player.health = this.player.maxHealth; } },
-          { title:'Túlterhelt lőszer', description:'+16% fegyversebzés minden lövésnél.', apply:() => { this.player.damageMultiplier *= 1.16; } },
-          { title:'Bővített tár', description:'+5 tárkapacitás és azonnali feltöltés.', apply:() => { this.weapon.magSize += 5; this.weapon.ammo = this.weapon.magSize; } },
-          { title:'Harci stimuláns', description:'+10% alap mozgási sebesség.', apply:() => { this.player.moveSpeedBonus *= 1.10; } },
-          { title:'Gyors tárkezelés', description:'15%-kal rövidebb újratöltési idő.', apply:() => { this.weapon.reloadDuration = Math.max(.78, this.weapon.reloadDuration * .85); } },
-          { title:'Tartalék készlet', description:'+90 tartalék lőszer.', apply:() => { this.weapon.reserve = Math.min(420, this.weapon.reserve + 90); } },
-          { title:'Fázis-kitérés', description:'15%-kal rövidebb dodge cooldown.', apply:() => { this.player.dodgeCooldownDuration = Math.max(.9, this.player.dodgeCooldownDuration * .85); } }
+          { title:'Rift-páncél', description:'+22 maximális életerő és teljes gyógyulás.', apply:() => { this.player.maxHealth += 22; this.player.health = this.player.maxHealth; } },
+          { title:'Túlterhelt lőszer', description:'+15% fegyversebzés.', apply:() => { this.player.damageMultiplier *= 1.15; } },
+          { title:'Bővített tár', description:'+4 tárkapacitás és teljes tár.', apply:() => { this.weapon.magSize += 4; this.weapon.ammo = this.weapon.magSize; } },
+          { title:'Gyors tárkezelés', description:'14%-kal rövidebb újratöltés.', apply:() => { this.weapon.reloadDuration = Math.max(.72, this.weapon.reloadDuration * .86); } },
+          { title:'Harci stimuláns', description:'+9% mozgási sebesség.', apply:() => { this.player.moveSpeedBonus *= 1.09; } },
+          { title:'Rift-mágnes', description:'+90 tartalék lőszer és +40 gold.', apply:() => { this.weapon.reserve = Math.min(540, this.weapon.reserve + 90); this.player.gold += 40; } },
+          { title:'Fázis-kitérés', description:'12%-kal rövidebb slide/dash cooldown.', apply:() => { this.player.dodgeCooldown = Math.max(0, this.player.dodgeCooldown - .25); } },
+          { title:'Páncéltörő cső', description:'A headshot sebzésed nő, a recoil csökken.', apply:() => { this.weapon.damage *= 1.08; this.weapon.recoil *= .92; } },
+          { title:'Áramvonalas szerkezet', description:'Gyorsabb célzás és stabilabb ADS mozgás.', apply:() => { this.app.camera.fov = Math.max(46, this.app.camera.fov - 1); } },
+          { title:'Energiacellás evolúció', description:'A fegyver egy szintet fejlődik és látványosan átalakul.', apply:() => { this.weapon.upgradeTier(); } },
+          { title:'Mestercsomag', description:'Új véletlen fegyver teljes tárakkal.', apply:() => { this.weapon.randomizeArchetype(); } },
+          { title:'Gyors tűzvezérlés', description:'8%-kal gyorsabb tűzgyorsaság.', apply:() => { this.weapon.fireRate = Math.max(.045, this.weapon.fireRate * .92); } }
         ];
         const result = [];
         while (result.length < 3) {
@@ -2735,7 +2729,8 @@
         DOM.waveText.textContent = this.waveManager.wave || 1;
         DOM.scoreText.textContent = this.player.score;
         DOM.enemyText.textContent = this.enemies.length + this.waveManager.spawnQueue.length;
-        DOM.modeBadge.textContent = this.player.viewMode.toUpperCase();
+        DOM.goldText.textContent = this.player.gold;
+        DOM.modeBadge.textContent = `${this.weapon.profile.short} · ${this.weapon.getTierData().title}`;
       }
       updateWorldEffects(dt) {
         this.portalTime += dt;
